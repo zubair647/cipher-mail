@@ -52,10 +52,11 @@ function toAccount(info: AccountInfo, displayName?: string): Account {
 }
 
 // ---- mock account (for local run without a registration) ----
+// Deliberately labelled "Demo" so it's never mistaken for a real sign-in.
 const MOCK_ACCOUNT: Account = {
-  name: "Riya A.",
-  email: "riya@cipherschools.com",
-  initials: "RA",
+  name: "Demo User",
+  email: "demo@cipher-mail.local",
+  initials: "DU",
 };
 
 /** Interactive sign-in. Resolves to a profile; throws AdminConsentRequired when blocked. */

@@ -29,7 +29,7 @@ export function Compose() {
       <StepNav active={3} />
       <ScreenHead eyebrow="Step 4 · FR#5, #6" title="Write the email" />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 20, alignItems: "start" }}>
+      <div className="compose-grid">
         <div className="stack-16">
           <div className="stack-8">
             <span className="label">Subject</span>

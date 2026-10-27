@@ -36,15 +36,16 @@ export function Avatar({ initials }: { initials: string }) {
 
 /** Top bar used on Home and Settings. */
 export function TopBar({ title }: { title: string }) {
-  const { account } = useAuth();
+  const { account, mock } = useAuth();
   return (
     <div
       className="row-between"
-      style={{ padding: "16px 28px", borderBottom: "1px solid var(--hairline)", background: "#fff" }}
+      style={{ padding: "18px 40px", borderBottom: "1px solid var(--hairline)", background: "#fff" }}
     >
       <div className="row" style={{ gap: 12 }}>
         <Logo size={28} />
         <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 16 }}>{title}</span>
+        {mock && <span className="chip chip-ghost tiny" style={{ padding: "2px 9px" }}>Demo mode</span>}
       </div>
       {account && (
         <div className="row" style={{ gap: 10 }}>

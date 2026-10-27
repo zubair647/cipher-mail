@@ -15,11 +15,13 @@ export function SignIn() {
             Send a personalized email to many recipients, from your own mailbox — paced so it lands in the inbox.
           </p>
           <button className="btn btn-microsoft btn-lg btn-block" onClick={signIn} disabled={busy}>
-            <MsIcon /> {busy ? "Signing in…" : "Sign in with Microsoft"}
+            <MsIcon /> {busy ? (mock ? "Entering demo…" : "Signing in…") : mock ? "Try the demo (no account)" : "Sign in with Microsoft"}
           </button>
           {error && <div className="banner banner-error"><span className="ico">!</span><span>{error}</span></div>}
           <p className="tiny muted">
-            You'll approve a one-time permission to send mail as yourself. No password is ever typed into the app.
+            {mock
+              ? "Demo mode: no real account is used and no mail is sent. Configure Microsoft to send for real."
+              : "You'll approve a one-time permission to send mail as yourself. No password is ever typed into the app."}
           </p>
         </div>
         {mock && (
