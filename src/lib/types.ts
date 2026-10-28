@@ -40,6 +40,7 @@ export interface Template {
   name: string;
   subject: string;
   bodyHtml: string;
+  isHtmlMode?: boolean;
   variables: VariableKey[];
   updatedAt: number;
   usedAtLabel?: string;
@@ -51,6 +52,8 @@ export interface CampaignDraft {
   mapping: ColumnMapping;
   subject: string;
   bodyHtml: string;
+  /** When true, bodyHtml is a complete HTML email the user pasted; sent as-is. */
+  isHtmlMode: boolean;
   testSentAt: number | null;
   templateName: string;
 }

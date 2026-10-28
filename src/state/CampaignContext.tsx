@@ -32,6 +32,7 @@ function emptyDraft(): CampaignDraft {
     mapping: { email: null },
     subject: "",
     bodyHtml: "",
+    isHtmlMode: false,
     testSentAt: null,
     templateName: "",
   };
@@ -46,6 +47,7 @@ interface CampaignState {
   setCsv: (csv: ParsedCsv | null) => void;
   setMapping: (m: ColumnMapping) => void;
   setCompose: (subject: string, bodyHtml: string) => void;
+  setHtmlMode: (on: boolean) => void;
   markTestSent: () => void;
   setTemplateName: (n: string) => void;
   loadTemplate: (t: Template) => void;
@@ -81,6 +83,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       setMapping: (mapping) => setDraft((d) => ({ ...d, mapping })),
       setCompose: (subject, bodyHtml) =>
         setDraft((d) => ({ ...d, subject, bodyHtml, testSentAt: null })),
+      setHtmlMode: (on) => setDraft((d) => ({ ...d, isHtmlMode: on, testSentAt: null })),
       markTestSent: () => setDraft((d) => ({ ...d, testSentAt: Date.now() })),
       setTemplateName: (templateName) => setDraft((d) => ({ ...d, templateName })),
       loadTemplate: (t) =>
@@ -88,6 +91,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
           ...d,
           subject: t.subject,
           bodyHtml: t.bodyHtml,
+          isHtmlMode: t.isHtmlMode ?? false,
           templateName: t.name,
           variables: [
             { key: "email", required: true },
@@ -103,6 +107,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
           name,
           subject: draft.subject,
           bodyHtml: draft.bodyHtml,
+          isHtmlMode: draft.isHtmlMode,
           variables: draft.variables.map((v) => v.key),
           updatedAt: Date.now(),
         };

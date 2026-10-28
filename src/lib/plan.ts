@@ -68,6 +68,7 @@ export async function buildPlan(
       subjectTemplate: draft.subject,
       mailbox,
       dailyCap,
+      isHtmlMode: draft.isHtmlMode,
       recipients,
     },
     skips,

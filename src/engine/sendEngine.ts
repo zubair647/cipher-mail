@@ -37,6 +37,7 @@ export interface EnginePlan {
   subjectTemplate: string;
   mailbox: string;
   dailyCap: number;
+  isHtmlMode: boolean;
   recipients: PlannedRecipient[];
 }
 
@@ -213,7 +214,7 @@ export class SendEngine {
       const outcome = await sendMail({
         to: row.email,
         subject: row.mergedSubject,
-        html: buildFinalHtml(this.plan.recipients[idx].bodyHtml, this.plan.mailbox),
+        html: buildFinalHtml(this.plan.recipients[idx].bodyHtml, this.plan.mailbox, this.plan.isHtmlMode),
       });
 
       if (this.cancelFlag) {

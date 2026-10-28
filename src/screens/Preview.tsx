@@ -5,6 +5,7 @@ import { EmailFrame } from "../components/EmailFrame";
 import { useCampaign } from "../state/CampaignContext";
 import { useAuth } from "../state/AuthContext";
 import { mergeText, validateTemplateVars } from "../lib/merge";
+import { buildFinalHtml } from "../lib/email";
 
 export function Preview() {
   const nav = useNavigate();
@@ -52,12 +53,29 @@ export function Preview() {
         </div>
       )}
 
-      <EmailFrame
-        from={`${account?.name ?? "You"} <${account?.email ?? ""}>`}
-        to={String(to)}
-        subject={subjectMerge.text}
-        bodyHtml={bodyMerge.text}
-      />
+      {draft.isHtmlMode ? (
+        <div className="card" style={{ overflow: "hidden" }}>
+          <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--hairline)", background: "#faf9f6" }}>
+            <div className="tiny muted">From: {account?.name} &lt;{account?.email}&gt; · To: {String(to)}</div>
+            <div style={{ fontWeight: 600, marginTop: 4, fontSize: 15 }}>{subjectMerge.text || <span className="muted">(no subject)</span>}</div>
+          </div>
+          <iframe
+            title="HTML email preview"
+            // allow-same-origin so the document renders; no allow-scripts, so any
+            // scripts in pasted HTML are blocked.
+            sandbox="allow-same-origin"
+            srcDoc={buildFinalHtml(bodyMerge.text, account?.email ?? "", true)}
+            style={{ width: "100%", height: 620, border: 0, background: "#fff" }}
+          />
+        </div>
+      ) : (
+        <EmailFrame
+          from={`${account?.name ?? "You"} <${account?.email ?? ""}>`}
+          to={String(to)}
+          subject={subjectMerge.text}
+          bodyHtml={bodyMerge.text}
+        />
+      )}
 
       <ActionBar
         backLabel="Edit"

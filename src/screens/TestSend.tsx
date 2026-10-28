@@ -23,7 +23,7 @@ export function TestSend() {
     try {
       const subject = "[TEST] " + mergeText(draft.subject, row, draft.mapping, false).text;
       const body = mergeText(draft.bodyHtml, row, draft.mapping, true).text;
-      const res = await sendMail({ to: mailbox, subject, html: buildFinalHtml(body, mailbox) });
+      const res = await sendMail({ to: mailbox, subject, html: buildFinalHtml(body, mailbox, draft.isHtmlMode) });
       if (res.ok) markTestSent();
       else setError("error" in res ? res.error : "Test send failed. Please try again.");
     } catch (e) {
