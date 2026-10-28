@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    strictPort: false,
+    // Lock the port so the OAuth redirect URI (http://localhost:5173) always matches.
+    strictPort: true,
   },
 });
