@@ -1,12 +1,27 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Shell, Note } from "../components/common";
 import { useCampaign } from "../state/CampaignContext";
 
 export function Summary() {
   const nav = useNavigate();
-  const { engine, built, resetCampaign } = useCampaign();
+  const { engine, built, draft, saveCurrentTemplate, resetCampaign } = useCampaign();
   const snap = engine?.snapshot();
+
+  // Save-as-campaign: keep the subject, body and variables for reuse (no recipients).
+  const defaultName = (draft.subject.trim() || draft.templateName.trim() || "Campaign");
+  const canSaveCampaign = !!(draft.subject.trim() || draft.bodyHtml.trim());
+  const [naming, setNaming] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [savedName, setSavedName] = useState<string | null>(null);
+
+  const beginSave = () => { setSaveName(draft.templateName.trim() || defaultName); setNaming(true); };
+  const confirmSave = () => {
+    const name = saveName.trim() || defaultName;
+    saveCurrentTemplate(name);
+    setSavedName(name);
+    setNaming(false);
+  };
 
   const remaining = snap?.remainingTotal ?? 0;
   const capHit = (snap?.capReached ?? false) && remaining > 0;
@@ -68,6 +83,43 @@ export function Summary() {
           <div style={{ marginBottom: 22 }}><Note kind="warn"><b>{done} of {total} sent — {remaining} remaining.</b> Daily cap reached. Come back tomorrow to send the next batch — re-upload the same CSV and already-sent recipients are skipped.</Note></div>
         ) : (
           <div style={{ marginBottom: 22 }}><Note kind="ok">All {total} sendable recipients processed. Nothing left in the queue.</Note></div>
+        )}
+
+        {canSaveCampaign && (
+          <div className="panel" style={{ marginBottom: 22 }}>
+            {savedName ? (
+              <div className="row" style={{ gap: 14, alignItems: "center" }}>
+                <span style={{ width: 40, height: 40, borderRadius: 11, background: "var(--green-bg)", color: "var(--green)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M20 6 9 17l-5-5" /></svg>
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 15 }}>Saved as “{savedName}”</div>
+                  <div style={{ fontSize: 13, color: "var(--gray)", marginTop: 2 }}>Find it on Home under <b>Saved campaigns</b>. Reuse it anytime — just upload a new CSV and send.</div>
+                </div>
+                <button className="btn btn-line btn-sm" onClick={() => { resetCampaign(); nav("/"); }}>View on Home</button>
+              </div>
+            ) : naming ? (
+              <>
+                <span className="lbl">Name this campaign</span>
+                <div className="row" style={{ gap: 10, marginTop: 10 }}>
+                  <input className="input" style={{ flex: 1 }} value={saveName} placeholder={defaultName} autoFocus
+                    onChange={(e) => setSaveName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") confirmSave(); if (e.key === "Escape") setNaming(false); }} />
+                  <button className="btn btn-pri" onClick={confirmSave}>Save campaign</button>
+                  <button className="btn btn-ghost" onClick={() => setNaming(false)}>Cancel</button>
+                </div>
+                <p style={{ fontSize: 12.5, color: "var(--faint)", margin: "10px 0 0" }}>Saves the subject, body and variables — not the recipient list. A campaign of the same name is updated, not duplicated.</p>
+              </>
+            ) : (
+              <div className="row" style={{ gap: 14, alignItems: "center" }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 15 }}>Reuse this campaign later</div>
+                  <div style={{ fontSize: 13, color: "var(--gray)", marginTop: 2 }}>Save the subject, body and variables (not recipients). Next time, upload a new CSV and send — no need to rewrite the mail.</div>
+                </div>
+                <button className="btn btn-sec" onClick={beginSave}>Save as campaign</button>
+              </div>
+            )}
+          </div>
         )}
 
         <div className="row" style={{ gap: 12 }}>

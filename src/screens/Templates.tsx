@@ -21,8 +21,8 @@ export function Templates() {
       <div className="page"><div className="canvas">
         <div className="rowb" style={{ alignItems: "flex-end", marginBottom: 32 }}>
           <div>
-            <h1 className="h1" style={{ marginBottom: 6 }}>Templates</h1>
-            <p style={{ fontSize: 16, color: "var(--gray)", margin: 0 }}>Reusable subject + body + variables, saved on this machine.</p>
+            <h1 className="h1" style={{ marginBottom: 6 }}>Saved campaigns</h1>
+            <p style={{ fontSize: 16, color: "var(--gray)", margin: 0 }}>Reusable subject + body + variables, saved on this machine. Upload a new CSV to send again.</p>
           </div>
           <button className="btn btn-pri btn-lg" onClick={startNew}><IconPlus />New campaign</button>
         </div>
@@ -30,9 +30,9 @@ export function Templates() {
         {templates.length === 0 ? (
           <div style={{ padding: "56px 0", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
             <span style={{ width: 76, height: 76, borderRadius: 22, background: "var(--accent-tint)", color: "var(--accent-600)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 28 }}><IconMail s={34} /></span>
-            <h2 className="h2">No templates yet</h2>
+            <h2 className="h2">No saved campaigns yet</h2>
             <p style={{ fontSize: 16, color: "var(--gray)", maxWidth: 420, margin: "0 0 32px", lineHeight: 1.55 }}>
-              A template is saved automatically when you name and save a campaign's email. Start a campaign to create your first one.
+              After you send a campaign, save it from the summary screen to reuse it here. Start a campaign to create your first one.
             </p>
             <button className="btn btn-pri btn-lg" onClick={startNew}><IconPlus />New campaign</button>
           </div>

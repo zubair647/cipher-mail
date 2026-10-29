@@ -85,7 +85,7 @@ export function Home() {
         <div className="rowb" style={{ alignItems: "flex-end", marginBottom: 34 }}>
           <div>
             <h1 className="h1">{greeting()}, {first}</h1>
-            <p style={{ fontSize: 16, color: "var(--gray)", margin: 0 }}>Start a new campaign or reuse a saved template.</p>
+            <p style={{ fontSize: 16, color: "var(--gray)", margin: 0 }}>Start a new campaign or reuse a saved one.</p>
           </div>
           <button className="btn btn-pri btn-lg" onClick={startNew}><IconPlus />New campaign</button>
         </div>
@@ -95,14 +95,14 @@ export function Home() {
             <span style={{ width: 76, height: 76, borderRadius: 22, background: "var(--accent-tint)", color: "var(--accent-600)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 28 }}><IconMail s={34} /></span>
             <h2 className="h2">No campaigns yet</h2>
             <p style={{ fontSize: 16, color: "var(--gray)", maxWidth: 420, margin: "0 0 32px", lineHeight: 1.55 }}>
-              Start your first campaign — define variables, upload a CSV, write the mail, and send. We'll save the template for next time.
+              Start your first campaign — define variables, upload a CSV, write the mail, and send. After it sends, save it as a campaign to reuse next time.
             </p>
             <button className="btn btn-pri btn-lg" onClick={startNew}><IconPlus />New campaign</button>
           </div>
         ) : (
           <>
             <div className="rowb" style={{ alignItems: "baseline", marginBottom: 18 }}>
-              <span className="lbl" style={{ margin: 0 }}>Saved templates</span>
+              <span className="lbl" style={{ margin: 0 }}>Saved campaigns</span>
               <span style={{ fontSize: 13, color: "var(--gray-2)" }}>{templates.length} saved</span>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
@@ -122,7 +122,7 @@ export function Home() {
         )}
 
         <p style={{ fontSize: 12.5, color: "var(--faint)", marginTop: 36, lineHeight: 1.6, maxWidth: 640 }}>
-          Templates (subject + body + variables) are stored in your browser. Recipient data never is — you re-upload a CSV each campaign.
+          Saved campaigns (subject + body + variables) are stored in your browser. Recipient data never is — you re-upload a CSV each time you send.
         </p>
       </div></div>
     </Shell>

@@ -10,6 +10,7 @@ import { SendEngine } from "../engine/sendEngine";
 import { buildPlan, type BuiltPlan } from "../lib/plan";
 import {
   getLastVariables,
+  getTemplates,
   saveTemplate,
   setActiveCampaignId,
   setLastVariables,
@@ -102,8 +103,11 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
           testSentAt: null,
         })),
       saveCurrentTemplate: (name) => {
+        // Re-saving a campaign of the same name updates it instead of making a
+        // duplicate, so "send → save → reuse → send → save" stays one entry.
+        const existing = getTemplates().find((x) => x.name.trim().toLowerCase() === name.trim().toLowerCase());
         const t: Template = {
-          id: newId(),
+          id: existing?.id ?? newId(),
           name,
           subject: draft.subject,
           bodyHtml: draft.bodyHtml,

@@ -47,7 +47,7 @@ export function Shell({
         </button>
         <span className="links">
           <a className={active === "home" ? "on" : ""} onClick={() => nav("/")}>Home</a>
-          <a className={active === "templates" ? "on" : ""} onClick={() => nav("/templates")}>Templates</a>
+          <a className={active === "templates" ? "on" : ""} onClick={() => nav("/templates")}>Campaigns</a>
           <a className={active === "settings" ? "on" : ""} onClick={() => nav("/settings")}>Settings</a>
         </span>
         <span className="sp" />
