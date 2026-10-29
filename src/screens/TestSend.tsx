@@ -23,6 +23,7 @@ export function TestSend() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [authIssue, setAuthIssue] = useState(false);
+  const [askSkip, setAskSkip] = useState(false);
 
   const row = draft.csv?.rows[0] ?? {};
   const mailbox = account?.email ?? "";
@@ -132,8 +133,21 @@ export function TestSend() {
         </div>
 
         <StepFoot onBack={() => nav("/campaign/preview")}>
-          {!sent && <span style={{ fontSize: 12.5, color: "var(--faint)", marginRight: 4 }}>The real send stays locked until a test passes.</span>}
-          <button className="btn btn-pri" disabled={!sent} onClick={() => nav("/campaign/confirm")}>Continue to confirm</button>
+          {sent ? (
+            <button className="btn btn-pri" onClick={() => nav("/campaign/confirm")}>Continue to confirm</button>
+          ) : askSkip ? (
+            <>
+              <span style={{ fontSize: 12.5, color: "var(--gray)", marginRight: 2 }}>Skip the test? The first real send goes out unverified.</span>
+              <button className="btn btn-line btn-sm" onClick={() => setAskSkip(false)}>Cancel</button>
+              <button className="btn btn-sec btn-sm" onClick={() => nav("/campaign/confirm")}>Skip anyway</button>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: 12.5, color: "var(--faint)", marginRight: 4 }}>Testing is recommended before the first real send.</span>
+              <button className="btn btn-ghost" onClick={() => setAskSkip(true)}>Skip test</button>
+              <button className="btn btn-pri" disabled onClick={() => nav("/campaign/confirm")}>Continue to confirm</button>
+            </>
+          )}
         </StepFoot>
       </div>
     </Shell>
