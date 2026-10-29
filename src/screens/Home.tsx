@@ -7,6 +7,8 @@ import { getTemplates, deleteTemplate } from "../lib/storage";
 import { getAllSendLogs } from "../lib/db";
 import type { SendLogEntry, Template } from "../lib/types";
 
+const RESUME_DISMISS_KEY = "cm.resumeDismissed";
+
 function greeting() {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
@@ -20,10 +22,11 @@ export function Home() {
   const { resetCampaign, loadTemplate, resumeCampaign } = useCampaign();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [resumeLog, setResumeLog] = useState<SendLogEntry | null>(null);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissedId, setDismissedId] = useState<string | null>(null);
 
   useEffect(() => {
     setTemplates(getTemplates());
+    setDismissedId(localStorage.getItem(RESUME_DISMISS_KEY));
     getAllSendLogs().then((logs) => {
       const unfinished = logs.find((l) => l.remaining > 0);
       setResumeLog(unfinished ?? null);
@@ -35,8 +38,14 @@ export function Home() {
   const openTemplate = (t: Template) => { resetCampaign(); loadTemplate(t); nav("/campaign/variables"); };
   const remove = (id: string) => { deleteTemplate(id); setTemplates(getTemplates()); };
 
-  // Dismiss just hides the banner — saved progress is retained and re-offered next launch.
-  const dismiss = () => setDismissed(true);
+  // Dismiss hides the banner and remembers this unfinished campaign so it stays
+  // hidden across reloads. Saved progress is retained; a genuinely new unfinished
+  // send (different campaignId) will re-offer.
+  const dismiss = () => {
+    if (!resumeLog) return;
+    localStorage.setItem(RESUME_DISMISS_KEY, resumeLog.campaignId);
+    setDismissedId(resumeLog.campaignId);
+  };
 
   const resume = () => {
     if (!resumeLog) return;
@@ -45,14 +54,19 @@ export function Home() {
   };
 
   const first = account?.name.split(" ")[0] ?? "there";
-  const showResume = resumeLog && !dismissed;
+  const showResume = resumeLog && dismissedId !== resumeLog.campaignId;
 
   return (
     <Shell active="home">
       <div className="page"><div className="canvas">
         {showResume && (
           <div className="panel" style={{ padding: "26px 28px", marginBottom: 40, position: "relative", borderColor: "var(--accent-tint-2)", background: "linear-gradient(180deg,#fffaf3,#fff)" }}>
-            <button className="modal close" style={{ position: "absolute", top: 18, right: 18 }} onClick={dismiss} title="Dismiss">✕</button>
+            <button
+              onClick={dismiss}
+              title="Dismiss"
+              aria-label="Dismiss"
+              style={{ position: "absolute", top: 16, right: 16, width: 30, height: 30, borderRadius: "50%", background: "var(--fill)", color: "var(--gray)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontSize: 15, border: "none", lineHeight: 1 }}
+            >✕</button>
             <div className="row" style={{ gap: 12, marginBottom: 10 }}>
               <span className="pill" style={{ background: "var(--accent-tint)", color: "var(--accent-700)" }}>Unfinished send</span>
             </div>
