@@ -4,6 +4,10 @@ import { Shell, Stepper, Masthead, StepFoot, Note } from "../components/common";
 import { useCampaign } from "../state/CampaignContext";
 import { parseCsvFile } from "../lib/csv";
 
+// A ready-made sample recipients sheet users can copy or download.
+const SAMPLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1T7Lg3QvbLKPOxi53OIgaNnxAdvPhAayIB-VXBfn7Ndw/edit?usp=sharing";
+const SAMPLE_CSV = "email,name\naditi@example.com,Aditi\nkaran@example.com,Karan\nrohan@example.com,Rohan\n";
+
 export function Upload() {
   const nav = useNavigate();
   const { draft, setCsv } = useCampaign();
@@ -33,7 +37,7 @@ export function Upload() {
     <Shell>
       <div className="page">
         <Stepper active={1} />
-        <Masthead label="Step 2 · FR#3" title="Upload your recipients" sub="A CSV with one row per recipient. Read in memory only — it never touches disk." />
+        <Masthead label="Step 2 · FR#3" title="Upload your recipients" sub="A CSV with one row per recipient. Read in memory only — it never touches disk." right={<CsvHelp />} />
 
         <div className="wizard">
           <div>
@@ -108,5 +112,49 @@ export function Upload() {
         </StepFoot>
       </div>
     </Shell>
+  );
+}
+
+/** "i" helper — not sure what a recipients CSV looks like? Open or download a sample. */
+function CsvHelp() {
+  const [open, setOpen] = useState(false);
+
+  const downloadSample = () => {
+    const blob = new Blob([SAMPLE_CSV], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "cipher-mail-sample.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setOpen(false);
+  };
+
+  return (
+    <div style={{ position: "relative" }}>
+      <button
+        className="btn btn-sec btn-sm"
+        onClick={() => setOpen((o) => !o)}
+        title="Not sure what the CSV should look like?"
+        style={{ gap: 7 }}
+      >
+        <span style={{ width: 18, height: 18, borderRadius: "50%", background: "var(--accent-tint)", color: "var(--accent-700)", display: "inline-flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 12, fontStyle: "italic" }}>i</span>
+        CSV format help
+      </button>
+      {open && (
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 110 }} />
+          <div className="popover" style={{ position: "absolute", right: 0, top: 44, width: 300, textAlign: "left" }}>
+            <span className="lbl" style={{ marginBottom: 8 }}>New to recipient CSVs?</span>
+            <p style={{ fontSize: 13, color: "var(--gray)", margin: "0 0 14px", lineHeight: 1.55 }}>
+              A CSV needs an <span className="var">email</span> column, plus a column for each variable (e.g. <span className="var">name</span>). Copy our ready-made sample and fill in your own rows.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <a className="btn btn-pri btn-sm btn-block" href={SAMPLE_SHEET_URL} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)}>Open sample sheet ↗</a>
+              <button className="btn btn-line btn-sm btn-block" onClick={downloadSample}>Download sample CSV</button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
   );
 }

@@ -6,10 +6,10 @@ import { getToken, isMock } from "../auth/authProvider";
 
 export type SendOutcome =
   | { ok: true }
-  | { ok: false; retryAfterSec: number }          // 429 — slow down
-  | { ok: false; authExpired: true }              // 401 — re-auth needed
-  | { ok: false; hardBounce: true; error: string } // permanent recipient failure
-  | { ok: false; error: string };                 // transient/other failure
+  | { ok: false; retryAfterSec: number }                      // 429 — slow down
+  | { ok: false; authExpired: true; error?: string }          // 401/403 — re-auth / consent needed
+  | { ok: false; hardBounce: true; error: string }            // permanent recipient failure
+  | { ok: false; error: string };                             // transient/other failure
 
 export interface OutgoingMail {
   to: string;
@@ -26,8 +26,13 @@ async function realSend(mail: OutgoingMail): Promise<SendOutcome> {
   let token: string;
   try {
     token = await getToken();
-  } catch {
-    return { ok: false, authExpired: true };
+  } catch (e) {
+    const m = (e as Error).message?.trim();
+    return {
+      ok: false,
+      authExpired: true,
+      error: m ? `Could not get a Microsoft token: ${m}` : "Microsoft needs an interactive sign-in to authorize sending.",
+    };
   }
 
   let res: Response;
@@ -57,10 +62,8 @@ async function realSend(mail: OutgoingMail): Promise<SendOutcome> {
     const ra = Number(res.headers.get("Retry-After"));
     return { ok: false, retryAfterSec: Number.isFinite(ra) && ra > 0 ? ra : 30 };
   }
-  if (res.status === 401 || res.status === 403) {
-    return { ok: false, authExpired: true };
-  }
 
+  // Read the Graph error detail once so every failure can report a real reason.
   let detail = `HTTP ${res.status}`;
   try {
     const body = await res.json();
@@ -68,6 +71,11 @@ async function realSend(mail: OutgoingMail): Promise<SendOutcome> {
   } catch {
     /* ignore */
   }
+
+  if (res.status === 401 || res.status === 403) {
+    return { ok: false, authExpired: true, error: detail };
+  }
+
   // Treat recipient-not-found style errors as hard bounces for suppression.
   const low = detail.toLowerCase();
   if (low.includes("recipient") && (low.includes("not found") || low.includes("invalid"))) {
