@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { TopBar, Avatar } from "../components/common";
+import { Shell, Avatar } from "../components/common";
 import { useAuth } from "../state/AuthContext";
 import { getPrefs, setPrefs } from "../lib/storage";
 import { getSuppression } from "../lib/db";
@@ -30,69 +30,73 @@ export function Settings() {
   };
 
   return (
-    <div className="page">
-      <TopBar title="Settings" />
-      <div className="container container-narrow">
-        <button className="btn-link" onClick={() => nav("/")} style={{ marginBottom: 20 }}>‹ Home</button>
+    <Shell active="settings">
+      <div className="page"><div className="canvas">
+        <h1 className="h1" style={{ marginBottom: 32 }}>Settings</h1>
 
-        {/* Daily cap */}
-        <div className="card card-pad stack-12" style={{ marginBottom: 20 }}>
-          <div className="stack-4">
-            <h3>Daily sending cap</h3>
-            <p className="small muted">Warm-up protects your mailbox reputation. Default {DEFAULT_DAILY_CAP}.</p>
-          </div>
-          <div className="row" style={{ gap: 16 }}>
-            <input type="range" min={1} max={HARD_CEILING} value={cap} onChange={(e) => updateCap(Number(e.target.value))} style={{ flex: 1, accentColor: "var(--orange)" }} />
-            <span className="num" style={{ fontSize: 22, minWidth: 90, textAlign: "right" }}>{cap} <span className="small muted">/ day</span></span>
-          </div>
-          <div className="banner banner-info"><span className="ico">i</span><span>Hard ceiling <span className="strong">{HARD_CEILING}</span> — cannot be exceeded in v1, even by editing the cap.</span></div>
-        </div>
+        <div className="wizard even">
+          <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            {/* Daily cap */}
+            <div className="panel">
+              <span className="lbl">Daily sending cap</span>
+              <p style={{ fontSize: 14, color: "var(--gray)", margin: "0 0 22px", lineHeight: 1.5 }}>Warm-up protects your mailbox reputation. Default {DEFAULT_DAILY_CAP}.</p>
+              <div className="row" style={{ alignItems: "baseline", gap: 10, marginBottom: 18 }}>
+                <span className="num" style={{ fontSize: 46 }}>{cap}</span>
+                <span style={{ color: "var(--gray)", fontSize: 14 }}>emails / day</span>
+              </div>
+              <input type="range" min={1} max={HARD_CEILING} value={cap} onChange={(e) => updateCap(Number(e.target.value))} style={{ width: "100%" }} />
+              <div className="rowb" style={{ fontSize: 12, color: "var(--faint)", marginTop: 12 }}><span>1</span><span>Hard ceiling {HARD_CEILING} — cannot exceed in v1</span></div>
+            </div>
 
-        {/* Connected account */}
-        <div className="card card-pad stack-12" style={{ marginBottom: 20 }}>
-          <h3>Connected account</h3>
-          <div className="row-between">
-            <div className="row" style={{ gap: 12 }}>
-              <Avatar initials={account?.initials ?? "?"} />
-              <div className="stack-4">
-                <span className="strong">{account?.name}</span>
-                <span className="small muted mono">{account?.email}</span>
+            {/* Connected account */}
+            <div className="panel">
+              <span className="lbl">Connected account</span>
+              <div className="row" style={{ gap: 14, marginTop: 14 }}>
+                <Avatar initials={account?.initials ?? "?"} size={42} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 15 }}>{account?.name}</div>
+                  <div className="em" style={{ fontSize: 12.5, color: "var(--gray)" }}>{account?.email}</div>
+                </div>
+                <span className="badge b-sent">Connected</span>
+              </div>
+              <div className="row" style={{ gap: 10, marginTop: 20 }}>
+                <button className="btn btn-sec btn-sm" onClick={signIn}>Reconnect</button>
+                <button className="btn btn-line btn-sm btn-danger" onClick={async () => { await signOut(); nav("/"); }}>Sign out</button>
               </div>
             </div>
-            <span className="status-pill st-sent"><span className="dot" />Connected</span>
           </div>
-          <div className="row" style={{ gap: 10 }}>
-            <button className="btn btn-ghost" onClick={signIn}>Reconnect</button>
-            <button className="btn btn-danger" onClick={async () => { await signOut(); nav("/"); }}>Sign out</button>
-          </div>
-        </div>
 
-        {/* Unsubscribe list */}
-        <div className="card card-pad stack-12">
-          <div className="row-between">
-            <div className="stack-4">
-              <h3>Unsubscribe list</h3>
-              <p className="small muted">Always suppressed · stored on this machine</p>
+          {/* Unsubscribe list */}
+          <div className="panel flush" style={{ alignSelf: "start" }}>
+            <div className="rowb" style={{ padding: "22px 24px", borderBottom: "1px solid var(--hair)" }}>
+              <div>
+                <span className="lbl" style={{ margin: "0 0 4px" }}>Unsubscribe list</span>
+                <span style={{ fontSize: 12.5, color: "var(--gray)" }}>Always suppressed · stored on this machine</span>
+              </div>
+              <span className="pill">{list.length} addresses</span>
             </div>
-            <span className="chip chip-ghost">{list.length} addresses</span>
+            {list.length === 0 ? (
+              <p style={{ fontSize: 13.5, color: "var(--gray)", padding: "18px 24px", margin: 0 }}>No suppressed addresses yet. Unsubscribes and hard bounces land here automatically.</p>
+            ) : (
+              <table className="tbl">
+                <tbody>
+                  {list.slice(0, 50).map((s) => (
+                    <tr key={s.email}>
+                      <td className="em">{s.email}</td>
+                      <td className="faint" style={{ textAlign: "right" }}>
+                        {s.reason === "unsubscribed" ? "unsubscribed" : "hard bounce"} · {new Date(s.addedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <div style={{ padding: "16px 24px", borderTop: "1px solid var(--hair)" }}>
+              <button className="btn btn-sec btn-sm" onClick={exportList} disabled={!list.length}>Export list (CSV)</button>
+            </div>
           </div>
-          {list.length === 0 ? (
-            <p className="small muted">No suppressed addresses yet. Unsubscribes and hard bounces land here automatically.</p>
-          ) : (
-            <div className="stack-8">
-              {list.slice(0, 50).map((s) => (
-                <div key={s.email} className="row-between" style={{ borderBottom: "1px solid var(--hairline)", paddingBottom: 8 }}>
-                  <span className="mono small">{s.email}</span>
-                  <span className="tiny muted-2">
-                    {s.reason === "unsubscribed" ? "unsubscribed" : "hard bounce"} · {new Date(s.addedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-          <div><button className="btn btn-ghost" onClick={exportList} disabled={!list.length}>Export list (CSV)</button></div>
         </div>
-      </div>
-    </div>
+      </div></div>
+    </Shell>
   );
 }

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ScreenHead } from "../components/common";
+import { Shell, Note } from "../components/common";
 import { useCampaign } from "../state/CampaignContext";
 
 export function Summary() {
@@ -32,10 +32,12 @@ export function Summary() {
 
   if (!snap) {
     return (
-      <div className="container container-narrow">
-        <ScreenHead title="Nothing to summarize" />
-        <button className="btn btn-primary" onClick={() => { resetCampaign(); nav("/"); }}>Back to home</button>
-      </div>
+      <Shell>
+        <div className="page">
+          <h2 className="h2">Nothing to summarize</h2>
+          <button className="btn btn-pri" style={{ marginTop: 16 }} onClick={() => { resetCampaign(); nav("/"); }}>Back to home</button>
+        </div>
+      </Shell>
     );
   }
 
@@ -43,52 +45,49 @@ export function Summary() {
   const total = built?.sendableCount ?? snap.sendableTotal;
 
   return (
-    <div className="container container-narrow">
-      <ScreenHead
-        eyebrow="FR#11"
-        title={capHit ? "Today's send is done" : "Send complete"}
-        sub="Logged locally. You can download the log or run the rest tomorrow."
-      />
-
-      <div className="row wrap" style={{ gap: 12, marginBottom: 20 }}>
-        <Stat n={snap.counts.sent} label="Sent" cls="st-sent" />
-        <Stat n={snap.counts.failed} label="Failed" cls="st-failed" />
-        <Stat n={snap.counts.skipped} label="Skipped" cls="st-skipped" />
-      </div>
-
-      {capHit ? (
-        <div className="banner banner-warn" style={{ marginBottom: 20 }}>
-          <span className="ico">!</span>
-          <span>
-            <span className="strong">{done} of {total}</span> sent — {remaining} remaining. Daily cap reached.
-            Come back tomorrow to send the next batch — re-upload the same CSV and already-sent recipients are skipped.
+    <Shell>
+      <div className="page"><div className="canvas">
+        <div className="row" style={{ gap: 16, marginBottom: 30 }}>
+          <span style={{ width: 54, height: 54, borderRadius: 16, background: capHit ? "var(--amber-bg)" : "var(--green-bg)", color: capHit ? "var(--amber)" : "var(--green)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 6 9 17l-5-5" /></svg>
           </span>
+          <div>
+            <h2 className="h2" style={{ margin: 0 }}>{capHit ? "Today's send is done" : "Send complete"}</h2>
+            <p style={{ fontSize: 15, color: "var(--gray)", margin: "4px 0 0" }}>Logged locally. {capHit ? "You can run the rest tomorrow." : "Nothing left in the queue."}</p>
+          </div>
         </div>
-      ) : (
-        <div className="banner banner-ok" style={{ marginBottom: 20 }}>
-          <span className="ico">✓</span>
-          <span>All {total} sendable recipients processed. Nothing left in the queue.</span>
-        </div>
-      )}
 
-      <div className="row" style={{ gap: 10 }}>
-        <button className="btn btn-ghost" onClick={download}>Download log (CSV)</button>
-        <button className="btn btn-primary" onClick={() => { resetCampaign(); nav("/"); }}>
-          {capHit ? "Done — back to home" : "Start a new campaign"}
-        </button>
-      </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 24 }}>
+          <StatCard n={snap.counts.sent} label="Sent today" color="var(--green)" />
+          <StatCard n={snap.counts.failed} label="Failed" color="var(--red)" />
+          <StatCard n={snap.counts.skipped} label="Skipped" color="var(--amber)" />
+          <StatCard n={remaining} label="Remaining" color="var(--ink-2)" />
+        </div>
+
+        {capHit ? (
+          <div style={{ marginBottom: 22 }}><Note kind="warn"><b>{done} of {total} sent — {remaining} remaining.</b> Daily cap reached. Come back tomorrow to send the next batch — re-upload the same CSV and already-sent recipients are skipped.</Note></div>
+        ) : (
+          <div style={{ marginBottom: 22 }}><Note kind="ok">All {total} sendable recipients processed. Nothing left in the queue.</Note></div>
+        )}
+
+        <div className="row" style={{ gap: 12 }}>
+          <button className="btn btn-line btn-lg" onClick={download}>Download log (CSV)</button>
+          <button className="btn btn-pri btn-lg" onClick={() => { resetCampaign(); nav("/"); }}>{capHit ? "Done — back to home" : "Start a new campaign"}</button>
+        </div>
+      </div></div>
+    </Shell>
+  );
+}
+
+function StatCard({ n, label, color }: { n: number; label: string; color: string }) {
+  return (
+    <div className="panel" style={{ padding: 24 }}>
+      <div className="num" style={{ fontSize: 38, lineHeight: 1, color }}>{n}</div>
+      <div style={{ fontSize: 13, color: "var(--gray)", marginTop: 8 }}>{label}</div>
     </div>
   );
 }
 
 function csvField(s: string): string {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-function Stat({ n, label, cls }: { n: number; label: string; cls: string }) {
-  return (
-    <div className="card card-pad" style={{ flex: "1 1 120px", minWidth: 120 }}>
-      <div className="num" style={{ fontSize: 28 }}>{n}</div>
-      <div className={`status-pill ${cls}`} style={{ marginTop: 6 }}><span className="dot" />{label}</div>
-    </div>
-  );
 }

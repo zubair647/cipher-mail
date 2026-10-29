@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ScreenHead, ActionBar } from "../components/common";
-import { EmailFrame } from "../components/EmailFrame";
+import { Shell, StepFoot, Note, MailWindow } from "../components/common";
 import { useCampaign } from "../state/CampaignContext";
 import { useAuth } from "../state/AuthContext";
 import { mergeText, validateTemplateVars } from "../lib/merge";
@@ -21,71 +20,68 @@ export function Preview() {
 
   const subjectMerge = mergeText(draft.subject, row, draft.mapping, false);
   const bodyMerge = mergeText(draft.bodyHtml, row, draft.mapping, true);
-  const { unknown } = validateTemplateVars(draft.subject, draft.bodyHtml, draft.mapping);
+  const { unknown, referenced } = validateTemplateVars(draft.subject, draft.bodyHtml, draft.mapping);
   const blocked = unknown.length > 0;
-
-  const referencedCount = validateTemplateVars(draft.subject, draft.bodyHtml, draft.mapping).referenced.length;
+  const from = account?.name ?? "You";
 
   return (
-    <div className="container">
-      <ScreenHead eyebrow="FR#7" title="Preview" />
-
-      <div className="row-between" style={{ marginBottom: 14 }}>
-        <div className="row" style={{ gap: 10 }}>
-          <button className="btn btn-ghost" disabled={i <= 0} onClick={() => setI((n) => Math.max(0, n - 1))}>‹</button>
-          <span className="small muted">Recipient <span className="strong">{Math.min(i + 1, total)}</span> of {total}</span>
-          <button className="btn btn-ghost" disabled={i >= total - 1} onClick={() => setI((n) => Math.min(total - 1, n + 1))}>›</button>
-        </div>
-        {blocked ? (
-          <span className="status-pill st-failed"><span className="dot" />Unknown variable</span>
-        ) : (
-          <span className="status-pill st-sent"><span className="dot" />All {referencedCount} variables resolve</span>
-        )}
-      </div>
-
-      {blocked && (
-        <div className="banner banner-error" style={{ marginBottom: 14 }}>
-          <span className="ico">!</span>
-          <span>
-            Unknown variable {unknown.map((u) => <code key={u} className="mono">{`{{${u}}}`}</code>)}. No CSV column matches.
-            Fix it in the editor — this campaign can't be sent until it resolves.
-          </span>
-        </div>
-      )}
-
-      {draft.isHtmlMode ? (
-        <div className="card" style={{ overflow: "hidden" }}>
-          <div style={{ padding: "12px 18px", borderBottom: "1px solid var(--hairline)", background: "#faf9f6" }}>
-            <div className="tiny muted">From: {account?.name} &lt;{account?.email}&gt; · To: {String(to)}</div>
-            <div style={{ fontWeight: 600, marginTop: 4, fontSize: 15 }}>{subjectMerge.text || <span className="muted">(no subject)</span>}</div>
+    <Shell>
+      <div className="page">
+        <div className="masthead rowb" style={{ alignItems: "flex-end", marginBottom: 24 }}>
+          <div>
+            <h2 className="h2" style={{ margin: 0 }}>Preview every recipient</h2>
+            <p className="lead" style={{ marginTop: 8 }}>Walk the list before sending. Unknown variables are flagged here.</p>
           </div>
-          <iframe
-            title="HTML email preview"
-            // allow-same-origin so the document renders; no allow-scripts, so any
-            // scripts in pasted HTML are blocked.
-            sandbox="allow-same-origin"
-            srcDoc={buildFinalHtml(bodyMerge.text, account?.email ?? "", true)}
-            style={{ width: "100%", height: 620, border: 0, background: "#fff" }}
-          />
+          {blocked
+            ? <Note kind="err" style={{ padding: "10px 14px" }}>Unknown variable</Note>
+            : <Note kind="ok" style={{ padding: "10px 14px" }}>{total} of {total} resolve</Note>}
         </div>
-      ) : (
-        <EmailFrame
-          from={`${account?.name ?? "You"} <${account?.email ?? ""}>`}
-          to={String(to)}
-          subject={subjectMerge.text}
-          bodyHtml={bodyMerge.text}
-        />
-      )}
 
-      <ActionBar
-        backLabel="Edit"
-        onBack={() => nav("/campaign/compose")}
-        primary={
-          <button className="btn btn-primary" disabled={blocked} onClick={() => nav("/campaign/test")}>
-            Continue to test
-          </button>
-        }
-      />
-    </div>
+        {blocked && (
+          <div style={{ marginBottom: 24 }}>
+            <Note kind="err"><b>Unknown variable {unknown.map((u) => <span key={u} className="kbd">{`{{${u}}}`}</span>)}.</b> No CSV column matches. Fix it in the editor — this campaign can't be sent until it resolves.</Note>
+          </div>
+        )}
+
+        <div className="wizard" style={{ gridTemplateColumns: "320px 1fr", gap: 36 }}>
+          <div className="ctx">
+            <span className="lbl">Recipients · {total}</span>
+            <div className="panel flush reclist">
+              {rows.slice(0, 500).map((r, idx) => (
+                <div key={idx} className={`r ${idx === i ? "on" : ""}`} onClick={() => setI(idx)}>
+                  <span className="em">{emailCol ? (r[emailCol] ?? "—") : "—"}</span>
+                  <span className={`badge dot-only ${blocked ? "b-fail" : "b-sent"}`} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="rowb" style={{ marginBottom: 14 }}>
+              <span className="lbl" style={{ margin: 0 }}>Recipient {Math.min(i + 1, total || 1)} of {total} · {String(to)}</span>
+              <div className="row" style={{ gap: 8 }}>
+                <button className="btn btn-sec btn-sm" disabled={i <= 0} onClick={() => setI((n) => Math.max(0, n - 1))}>‹ Prev</button>
+                <button className="btn btn-sec btn-sm" disabled={i >= total - 1} onClick={() => setI((n) => Math.min(total - 1, n + 1))}>Next ›</button>
+              </div>
+            </div>
+
+            {draft.isHtmlMode ? (
+              <div className="mailwin">
+                <div className="mailhd"><span className="meta">From: {from} · To: {String(to)}</span><span className="sub">{subjectMerge.text || <span className="faint">(no subject)</span>}</span></div>
+                <iframe title="HTML email preview" sandbox="allow-same-origin" srcDoc={buildFinalHtml(bodyMerge.text, account?.email ?? "", true)} style={{ width: "100%", height: 520, border: 0, background: "#fff" }} />
+              </div>
+            ) : (
+              <MailWindow from={from} to={String(to)} subject={subjectMerge.text} bodyHtml={bodyMerge.text} />
+            )}
+
+            <p style={{ fontSize: 12.5, color: "var(--faint)", marginTop: 12 }}>{referenced.length} variables referenced · all cell values are HTML-escaped before sending.</p>
+          </div>
+        </div>
+
+        <StepFoot backLabel="Edit" onBack={() => nav("/campaign/compose")}>
+          <button className="btn btn-pri" disabled={blocked} onClick={() => nav("/campaign/test")}>Continue to test</button>
+        </StepFoot>
+      </div>
+    </Shell>
   );
 }

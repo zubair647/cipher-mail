@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { TopBar } from "../components/common";
+import { Shell, IconPlus, IconMail } from "../components/common";
 import { useAuth } from "../state/AuthContext";
 import { useCampaign } from "../state/CampaignContext";
 import { getTemplates, deleteTemplate } from "../lib/storage";
@@ -20,6 +20,7 @@ export function Home() {
   const { resetCampaign, loadTemplate, resumeCampaign } = useCampaign();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [resumeLog, setResumeLog] = useState<SendLogEntry | null>(null);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     setTemplates(getTemplates());
@@ -29,9 +30,13 @@ export function Home() {
     });
   }, []);
 
+  // "Start a new campaign" — straight into a fresh flow, no second prompt.
   const startNew = () => { resetCampaign(); nav("/campaign/variables"); };
   const openTemplate = (t: Template) => { resetCampaign(); loadTemplate(t); nav("/campaign/variables"); };
   const remove = (id: string) => { deleteTemplate(id); setTemplates(getTemplates()); };
+
+  // Dismiss just hides the banner — saved progress is retained and re-offered next launch.
+  const dismiss = () => setDismissed(true);
 
   const resume = () => {
     if (!resumeLog) return;
@@ -40,82 +45,73 @@ export function Home() {
   };
 
   const first = account?.name.split(" ")[0] ?? "there";
+  const showResume = resumeLog && !dismissed;
 
   return (
-    <div className="page">
-      <TopBar title="Home" />
-      <div className="container">
-        {resumeLog && (
-          <div className="card card-pad stack-12" style={{ borderColor: "#f1dcb8", marginBottom: 24 }}>
-            <div className="row-between">
-              <h3>Resume your last campaign?</h3>
-              <span className="chip-ghost chip">unfinished</span>
+    <Shell active="home">
+      <div className="page"><div className="canvas">
+        {showResume && (
+          <div className="panel" style={{ padding: "26px 28px", marginBottom: 40, position: "relative", borderColor: "var(--accent-tint-2)", background: "linear-gradient(180deg,#fffaf3,#fff)" }}>
+            <button className="modal close" style={{ position: "absolute", top: 18, right: 18 }} onClick={dismiss} title="Dismiss">✕</button>
+            <div className="row" style={{ gap: 12, marginBottom: 10 }}>
+              <span className="pill" style={{ background: "var(--accent-tint)", color: "var(--accent-700)" }}>Unfinished send</span>
             </div>
-            <p className="muted small">
-              An unfinished send stopped with <span className="strong">{resumeLog.remaining}</span> of{" "}
-              {resumeLog.totalRecipients} remaining. Re-upload the same CSV to continue — already-sent recipients are
-              skipped automatically, so no one is emailed twice.
+            <div className="h3" style={{ marginBottom: 6 }}>Resume your last campaign?</div>
+            <p style={{ fontSize: 14.5, color: "var(--gray)", margin: "0 0 20px", maxWidth: 640, lineHeight: 1.6 }}>
+              An unfinished send stopped with <b style={{ color: "var(--ink)" }}>{resumeLog.remaining} of {resumeLog.totalRecipients} remaining</b>. Re-upload the same CSV to continue — already-sent recipients are skipped automatically, so no one is emailed twice.
             </p>
             <div className="row" style={{ gap: 10 }}>
-              <button className="btn btn-primary" onClick={resume}>Resume this campaign</button>
-              <button className="btn btn-ghost" onClick={startNew}>Start a new campaign</button>
+              <button className="btn btn-pri" onClick={resume}>Resume this campaign</button>
+              <button className="btn btn-line" onClick={startNew}>Start a new campaign</button>
+              <button className="btn btn-ghost" onClick={dismiss}>Dismiss</button>
             </div>
           </div>
         )}
 
-        <div className="stack-8" style={{ marginBottom: 28 }}>
-          <h1>{greeting()}, {first}</h1>
-          <p className="muted" style={{ fontSize: 15 }}>Start a new campaign or reuse a saved template.</p>
-        </div>
-
-        <button className="btn btn-primary btn-lg" onClick={startNew} style={{ marginBottom: 32 }}>
-          + New campaign
-        </button>
-
-        <div className="row-between" style={{ marginBottom: 14 }}>
-          <h3>Saved templates</h3>
-          <span className="small muted">{templates.length} saved</span>
+        <div className="rowb" style={{ alignItems: "flex-end", marginBottom: 34 }}>
+          <div>
+            <h1 className="h1">{greeting()}, {first}</h1>
+            <p style={{ fontSize: 16, color: "var(--gray)", margin: 0 }}>Start a new campaign or reuse a saved template.</p>
+          </div>
+          <button className="btn btn-pri btn-lg" onClick={startNew}><IconPlus />New campaign</button>
         </div>
 
         {templates.length === 0 ? (
-          <div className="card card-pad-lg stack-12" style={{ textAlign: "center" }}>
-            <h2 style={{ fontSize: 20 }}>No campaigns yet</h2>
-            <p className="muted" style={{ maxWidth: 420, margin: "0 auto" }}>
-              Start your first campaign — define variables, upload a CSV, write the mail, and send.
-              We'll save the template for next time.
+          <div style={{ padding: "56px 0", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
+            <span style={{ width: 76, height: 76, borderRadius: 22, background: "var(--accent-tint)", color: "var(--accent-600)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 28 }}><IconMail s={34} /></span>
+            <h2 className="h2">No campaigns yet</h2>
+            <p style={{ fontSize: 16, color: "var(--gray)", maxWidth: 420, margin: "0 0 32px", lineHeight: 1.55 }}>
+              Start your first campaign — define variables, upload a CSV, write the mail, and send. We'll save the template for next time.
             </p>
-            <div><button className="btn btn-primary" onClick={startNew}>+ New campaign</button></div>
+            <button className="btn btn-pri btn-lg" onClick={startNew}><IconPlus />New campaign</button>
           </div>
         ) : (
-          <div className="stack-12">
-            {templates.map((t) => (
-              <div key={t.id} className="card card-pad row-between" style={{ cursor: "pointer" }} onClick={() => openTemplate(t)}>
-                <div className="stack-4">
-                  <span className="strong" style={{ fontSize: 15 }}>{t.name}</span>
-                  <span className="small muted">
-                    Subject: <span className="mono">{t.subject || "—"}</span>
-                  </span>
-                  <span className="tiny muted-2">
-                    {t.variables.filter((v) => v !== "email").length} variables · updated {relative(t.updatedAt)}
+          <>
+            <div className="rowb" style={{ alignItems: "baseline", marginBottom: 18 }}>
+              <span className="lbl" style={{ margin: 0 }}>Saved templates</span>
+              <span style={{ fontSize: 13, color: "var(--gray-2)" }}>{templates.length} saved</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 20 }}>
+              {templates.map((t) => (
+                <div key={t.id} className="tcard" onClick={() => openTemplate(t)}>
+                  <span className="ico"><IconMail s={20} /></span>
+                  <h4>{t.name}</h4>
+                  <p className="mono" style={{ fontSize: 13 }}>{t.subject || "—"}</p>
+                  <span className="ft">
+                    <span>{t.variables.filter((v) => v !== "email").length} variables · {relative(t.updatedAt)}</span>
+                    <button className="linkbtn" style={{ color: "var(--gray-2)", fontWeight: 500, fontFamily: "var(--sans)" }} onClick={(e) => { e.stopPropagation(); remove(t.id); }}>Delete</button>
                   </span>
                 </div>
-                <div className="row" style={{ gap: 8 }} onClick={(e) => e.stopPropagation()}>
-                  <button className="btn btn-ghost" onClick={() => openTemplate(t)}>Use</button>
-                  <button className="btn-link" style={{ color: "var(--muted-2)" }} onClick={() => remove(t.id)}>Delete</button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         )}
 
-        <div className="row" style={{ marginTop: 32 }}>
-          <button className="btn-link" onClick={() => nav("/settings")}>Settings</button>
-        </div>
-        <p className="tiny muted-2" style={{ marginTop: 18 }}>
+        <p style={{ fontSize: 12.5, color: "var(--faint)", marginTop: 36, lineHeight: 1.6, maxWidth: 640 }}>
           Templates (subject + body + variables) are stored in your browser. Recipient data never is — you re-upload a CSV each campaign.
         </p>
-      </div>
-    </div>
+      </div></div>
+    </Shell>
   );
 }
 

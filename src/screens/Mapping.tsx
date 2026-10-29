@@ -1,8 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ScreenHead, StepNav, ActionBar } from "../components/common";
+import { Shell, Stepper, Masthead, StepFoot, Note, MailWindow, IconChevronDown } from "../components/common";
 import { useCampaign } from "../state/CampaignContext";
 import { autoMatchColumn } from "../lib/csv";
+import { mergeText } from "../lib/merge";
 import type { ColumnMapping } from "../lib/types";
 
 export function Mapping() {
@@ -27,78 +28,82 @@ export function Mapping() {
 
   if (!csv) {
     return (
-      <div className="container container-narrow">
-        <StepNav active={2} />
-        <div className="banner banner-warn"><span className="ico">!</span><span>No CSV uploaded yet.</span></div>
-        <ActionBar onBack={() => nav("/campaign/upload")} primary={<button className="btn btn-primary" onClick={() => nav("/campaign/upload")}>Go to upload</button>} />
-      </div>
+      <Shell>
+        <div className="page">
+          <Stepper active={2} />
+          <Note kind="warn" style={{ marginBottom: 20 }}>No CSV uploaded yet.</Note>
+          <StepFoot onBack={() => nav("/campaign/upload")}>
+            <button className="btn btn-pri" onClick={() => nav("/campaign/upload")}>Go to upload</button>
+          </StepFoot>
+        </div>
+      </Shell>
     );
   }
 
   const emailMapped = !!draft.mapping["email"];
   const setCol = (key: string, col: string) => setMapping({ ...draft.mapping, [key]: col || null });
+  const emailCol = draft.mapping["email"];
+  const to = emailCol ? (sample[emailCol] ?? "—") : "—";
+  const subject = mergeText(draft.subject || "Your {{course}} schedule", sample, draft.mapping, false).text;
+  const body = draft.bodyHtml
+    ? mergeText(draft.bodyHtml, sample, draft.mapping, true).text
+    : mergeText("<p>Hi {{name | there}}, you're invited to this week's <b>{{course}}</b> session…</p>", sample, draft.mapping, true).text;
 
   return (
-    <div className="container">
-      <StepNav active={2} />
-      <ScreenHead
-        eyebrow="Step 3 · FR#4"
-        title="Map your columns"
-        sub={<>Confirm which column is the email and which feeds each variable. Handles messy headers like <code className="mono">First Name</code> vs <code className="mono">name</code>.</>}
-      />
+    <Shell>
+      <div className="page">
+        <Stepper active={2} />
+        <Masthead
+          label="Step 3 · FR#4"
+          title="Map your columns"
+          sub={<>Confirm which column is the email and which feeds each variable. Handles messy headers like <span className="kbd">First Name</span> vs <span className="kbd">name</span>.</>}
+        />
+        <div className="wizard even">
+          <div className="panel flush">
+            <table className="tbl">
+              <thead><tr><th>Variable</th><th>CSV column</th><th>Sample</th></tr></thead>
+              <tbody>
+                {draft.variables.map((v) => {
+                  const col = draft.mapping[v.key] ?? "";
+                  const val = col ? (sample[col] ?? "") : "";
+                  return (
+                    <tr key={v.key}>
+                      <td>
+                        <span className="var">{v.key}</span>
+                        {v.required && <span className="pill" style={{ marginLeft: 6 }}>required</span>}
+                      </td>
+                      <td>
+                        <div style={{ position: "relative", maxWidth: 240 }}>
+                          <select className="sel" value={col} onChange={(e) => setCol(v.key, e.target.value)} style={{ color: col ? "var(--ink)" : "var(--faint)" }}>
+                            <option value="">{v.required ? "— select a column —" : "— not mapped —"}</option>
+                            {csv.headers.map((h) => <option key={h} value={h}>{h}</option>)}
+                          </select>
+                          <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--gray-2)" }}><IconChevronDown s={14} /></span>
+                        </div>
+                      </td>
+                      <td>{col ? <span className="mono">{val || <em className="faint">blank → fallback</em>}</span> : <span className="faint">uses fallback</span>}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-      <div className="card" style={{ overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-          <thead>
-            <tr style={{ background: "#faf9f6", textAlign: "left" }}>
-              <Th>Variable</Th><Th>CSV column</Th><Th>Sample</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {draft.variables.map((v) => {
-              const col = draft.mapping[v.key] ?? "";
-              const val = col ? (sample[col] ?? "") : "";
-              return (
-                <tr key={v.key} style={{ borderTop: "1px solid var(--hairline)" }}>
-                  <Td>
-                    <code className="mono">{`{{${v.key}}}`}</code>
-                    {v.required && <span className="chip chip-req" style={{ marginLeft: 8, fontSize: 11 }}>required</span>}
-                  </Td>
-                  <Td>
-                    <select className="select" value={col} onChange={(e) => setCol(v.key, e.target.value)} style={{ maxWidth: 240 }}>
-                      <option value="">{v.required ? "— select a column —" : "— not mapped — uses fallback"}</option>
-                      {csv.headers.map((h) => <option key={h} value={h}>{h}</option>)}
-                    </select>
-                  </Td>
-                  <Td>
-                    {col ? <span className="mono muted">{val || <em>blank → fallback</em>}</span> : <span className="muted-2">—</span>}
-                  </Td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+          <div className="ctx">
+            <div className="cx">
+              <span className="lbl">Resulting first recipient</span>
+              <MailWindow to={String(to)} subject={subject} bodyHtml={body} footer={false} compact />
+            </div>
+            <div className="cx soft">
+              <Note kind="info" bare>Trailing spaces in headers are normalized automatically. Nothing sends until the <b>email</b> column is mapped; unmapped optional variables use their fallback.</Note>
+            </div>
+          </div>
+        </div>
+
+        <StepFoot onBack={() => nav("/campaign/upload")}>
+          <button className="btn btn-pri" disabled={!emailMapped} onClick={() => nav("/campaign/compose")}>Write the email</button>
+        </StepFoot>
       </div>
-
-      <div className="banner banner-info" style={{ marginTop: 16 }}>
-        <span className="ico">i</span>
-        <span>
-          Trailing spaces in headers are normalized automatically. Unmapped optional variables use their fallback.
-          Nothing sends until the email column is mapped.
-        </span>
-      </div>
-
-      <ActionBar
-        onBack={() => nav("/campaign/upload")}
-        primary={
-          <button className="btn btn-primary" disabled={!emailMapped} onClick={() => nav("/campaign/compose")}>
-            Write the email
-          </button>
-        }
-      />
-    </div>
+    </Shell>
   );
 }
-
-const Th = ({ children }: { children: React.ReactNode }) => <th style={{ padding: "11px 16px", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--muted)" }}>{children}</th>;
-const Td = ({ children }: { children: React.ReactNode }) => <td style={{ padding: "12px 16px", verticalAlign: "middle" }}>{children}</td>;

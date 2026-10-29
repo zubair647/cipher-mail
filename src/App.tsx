@@ -3,6 +3,7 @@ import { useAuth } from "./state/AuthContext";
 import { SignIn } from "./screens/SignIn";
 import { ConsentHelper } from "./screens/ConsentHelper";
 import { Home } from "./screens/Home";
+import { Templates } from "./screens/Templates";
 import { Variables } from "./screens/Variables";
 import { Upload } from "./screens/Upload";
 import { Mapping } from "./screens/Mapping";
@@ -25,7 +26,7 @@ function RequireAuth({ children }: { children: JSX.Element }) {
 
 function FullScreenLoading() {
   return (
-    <div className="center-screen">
+    <div className="center">
       <div className="muted">Loading…</div>
     </div>
   );
@@ -42,6 +43,7 @@ export default function App() {
         }
       />
       <Route path="/consent" element={<ConsentHelper />} />
+      <Route path="/templates" element={<RequireAuth><Templates /></RequireAuth>} />
       <Route path="/campaign/variables" element={<RequireAuth><Variables /></RequireAuth>} />
       <Route path="/campaign/upload" element={<RequireAuth><Upload /></RequireAuth>} />
       <Route path="/campaign/map" element={<RequireAuth><Mapping /></RequireAuth>} />

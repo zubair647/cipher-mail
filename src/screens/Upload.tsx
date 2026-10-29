@@ -1,9 +1,8 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ScreenHead, StepNav, ActionBar } from "../components/common";
+import { Shell, Stepper, Masthead, StepFoot, Note } from "../components/common";
 import { useCampaign } from "../state/CampaignContext";
 import { parseCsvFile } from "../lib/csv";
-import type { ParsedCsv } from "../lib/types";
 
 export function Upload() {
   const nav = useNavigate();
@@ -26,95 +25,88 @@ export function Upload() {
 
   const hasEmail = csv ? !!csv.emailColumnGuess : false;
   const canContinue = !!csv && csv.rows.length > 0;
+  const noEmail = csv?.warnings.find((w) => w.kind === "no-email-column");
+  const headers = csv?.headers ?? [];
+  const previewRows = csv?.rows.slice(0, 3) ?? [];
 
   return (
-    <div className="container container-narrow">
-      <StepNav active={1} />
-      <ScreenHead
-        eyebrow="Step 2 · FR#3"
-        title="Upload your recipients"
-        sub="A CSV with one row per recipient. Read in memory only — it never touches disk."
-      />
+    <Shell>
+      <div className="page">
+        <Stepper active={1} />
+        <Masthead label="Step 2 · FR#3" title="Upload your recipients" sub="A CSV with one row per recipient. Read in memory only — it never touches disk." />
 
-      {!csv ? (
-        <div
-          className="card"
-          onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
-          onClick={() => inputRef.current?.click()}
-          style={{
-            padding: "48px 24px", textAlign: "center", cursor: "pointer",
-            borderStyle: "dashed", borderColor: drag ? "var(--orange)" : "var(--hairline)",
-            background: drag ? "var(--orange-tint)" : "#fff",
-          }}
-        >
-          <div style={{ fontSize: 30, marginBottom: 8 }}>⬆</div>
-          <div className="strong" style={{ fontSize: 15 }}>{parsing ? "Reading…" : "Drop a CSV here, or click to browse"}</div>
-          <div className="small muted" style={{ marginTop: 6 }}>One row per recipient · parsed in memory, never saved to disk</div>
-          <input ref={inputRef} type="file" accept=".csv,text/csv" hidden onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
-        </div>
-      ) : (
-        <div className="card card-pad stack-16">
-          <div className="row-between">
-            <div className="row" style={{ gap: 12 }}>
-              <span style={{ fontSize: 22 }}>📄</span>
-              <div className="stack-4">
-                <span className="strong">{csv.fileName}</span>
-                <span className="small muted">{csv.sizeLabel} · {csv.rows.length} rows found</span>
+        <div className="wizard">
+          <div>
+            {!csv ? (
+              <div
+                onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={(e) => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+                onClick={() => inputRef.current?.click()}
+                style={{ border: `1.5px dashed ${drag ? "var(--accent)" : "var(--line)"}`, background: drag ? "var(--accent-tint)" : "#fff", borderRadius: 16, padding: "56px 24px", textAlign: "center", cursor: "pointer" }}
+              >
+                <span style={{ width: 52, height: 52, borderRadius: 14, background: "var(--accent-tint)", color: "var(--accent-600)", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 15V3M7 8l5-5 5 5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" /></svg>
+                </span>
+                <div style={{ fontWeight: 600, fontSize: 16 }}>{parsing ? "Reading…" : "Drop a CSV here, or click to browse"}</div>
+                <div style={{ fontSize: 13, color: "var(--gray)", marginTop: 6 }}>One row per recipient · parsed in memory, never saved to disk</div>
               </div>
-            </div>
-            <button className="btn btn-ghost" onClick={() => { setCsv(null); if (inputRef.current) inputRef.current.value = ""; }}>Replace</button>
+            ) : (
+              <>
+                <div style={{ border: `1.5px solid ${hasEmail ? "var(--accent)" : "var(--red)"}`, background: hasEmail ? "var(--accent-tint)" : "var(--red-bg)", borderRadius: 16, padding: 24, display: "flex", alignItems: "center", gap: 18, marginBottom: 22 }}>
+                  <span style={{ width: 46, height: 46, borderRadius: 12, background: "#fff", color: hasEmail ? "var(--accent-600)" : "var(--red)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /></svg>
+                  </span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 600, fontSize: 15 }}>{csv.fileName}</div>
+                    <div style={{ fontSize: 13, color: "var(--gray)", marginTop: 3 }}>{csv.sizeLabel} · <b style={{ color: hasEmail ? "var(--green)" : "var(--ink)" }}>{csv.rows.length} rows found</b></div>
+                  </div>
+                  <button className="btn btn-line btn-sm" onClick={() => { setCsv(null); if (inputRef.current) inputRef.current.value = ""; }}>Replace</button>
+                </div>
+                <span className="lbl">{noEmail ? "Headers we found" : "Parsed preview · first 3 rows"}</span>
+                <div className="panel flush">
+                  <table className="tbl">
+                    <thead><tr>{headers.slice(0, 4).map((h) => <th key={h}>{h}</th>)}</tr></thead>
+                    <tbody>
+                      {previewRows.map((row, i) => (
+                        <tr key={i}>{headers.slice(0, 4).map((h) => <td key={h} className={h === csv.emailColumnGuess ? "em" : ""}>{row[h] ?? ""}</td>)}</tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </div>
 
-          <ValidationList csv={csv} />
+          <div className="ctx">
+            {csv ? (
+              <>
+                <div className="cx">
+                  <span className="lbl">Validation</span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {csv.emailColumnGuess && <Note kind="ok" style={{ padding: "12px 14px" }}>Email column detected{csv.hadBom ? " · UTF-8 BOM stripped" : ""}</Note>}
+                    {csv.warnings.filter((w) => w.kind !== "no-email-column").map((w, i) => (
+                      <Note key={i} kind="warn" style={{ padding: "12px 14px" }}>{w.message}{w.detail ? <> — {w.detail}</> : null}</Note>
+                    ))}
+                    {noEmail && <Note kind="err" style={{ padding: "12px 14px" }}><b>No email column found.</b> Add an <span className="kbd">email</span> column and re-upload, or map one on the next step.</Note>}
+                  </div>
+                </div>
+                <div className="cx soft">
+                  <Note kind="info" bare>De-duplication happens on upload. Recipient rows live only in memory for this session — nothing is written to disk or a server.</Note>
+                </div>
+              </>
+            ) : (
+              <div className="cx soft"><Note kind="info" bare>Your CSV is parsed entirely in the browser. It never touches disk or a server, and is cleared when you close the tab.</Note></div>
+            )}
+          </div>
         </div>
-      )}
 
-      <input ref={inputRef} type="file" accept=".csv,text/csv" hidden onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+        <input ref={inputRef} type="file" accept=".csv,text/csv" hidden onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
 
-      <ActionBar
-        onBack={() => nav("/campaign/variables")}
-        primary={
-          <button
-            className="btn btn-primary"
-            disabled={!canContinue}
-            title={!hasEmail ? "Map an email column on the next step" : undefined}
-            onClick={() => nav("/campaign/map")}
-          >
-            Map columns
-          </button>
-        }
-      />
-    </div>
-  );
-}
-
-function ValidationList({ csv }: { csv: ParsedCsv }) {
-  const noEmail = csv.warnings.find((w) => w.kind === "no-email-column");
-  return (
-    <div className="stack-8">
-      {csv.hadBom && (
-        <div className="banner banner-ok"><span className="ico">✓</span><span>UTF-8 BOM stripped automatically.</span></div>
-      )}
-      {csv.emailColumnGuess && (
-        <div className="banner banner-ok"><span className="ico">✓</span><span>Email column detected: <code className="mono">{csv.emailColumnGuess}</code></span></div>
-      )}
-      {csv.warnings.filter((w) => w.kind !== "no-email-column").map((w, i) => (
-        <div key={i} className="banner banner-warn">
-          <span className="ico">!</span>
-          <span>{w.message}{w.detail ? <> <span className="muted">— {w.detail}</span></> : null}</span>
-        </div>
-      ))}
-      {noEmail && (
-        <div className="banner banner-error">
-          <span className="ico">!</span>
-          <span>
-            <span className="strong">{noEmail.message}</span>{" "}
-            {noEmail.detail} You can still map one on the next step, or add an email column and re-upload.
-          </span>
-        </div>
-      )}
-    </div>
+        <StepFoot onBack={() => nav("/campaign/variables")}>
+          <button className="btn btn-pri" disabled={!canContinue} title={!hasEmail ? "Map an email column on the next step" : undefined} onClick={() => nav("/campaign/map")}>Map columns</button>
+        </StepFoot>
+      </div>
+    </Shell>
   );
 }

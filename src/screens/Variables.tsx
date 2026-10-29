@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ScreenHead, StepNav, ActionBar } from "../components/common";
+import { Shell, Stepper, Masthead, StepFoot, Note } from "../components/common";
 import { useCampaign } from "../state/CampaignContext";
 
 export function Variables() {
@@ -17,61 +17,64 @@ export function Variables() {
   };
   const remove = (key: string) => setVariables(vars.filter((v) => v.key !== key));
 
-  const expected = vars.map((v) => v.key).join(", ");
-
   return (
-    <div className="container container-narrow">
-      <StepNav active={0} />
-      <ScreenHead
-        eyebrow="Step 1 · FR#2"
-        title="Define your merge variables"
-        sub={<>These become the columns your CSV must contain. Use them in the mail as <code className="mono">{"{{name}}"}</code>.</>}
-      />
+    <Shell>
+      <div className="page">
+        <Stepper active={0} />
+        <Masthead
+          label="Step 1 · FR#2"
+          title="Define your merge variables"
+          sub={<>These become the columns your CSV must contain. Use them in the mail as <span className="var">{"{{name}}"}</span>.</>}
+        />
+        <div className="wizard">
+          <div className="panel">
+            <span className="lbl">Variables in this campaign</span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 28 }}>
+              {vars.map((v) =>
+                v.required ? (
+                  <span key={v.key} className="chip">{`{{${v.key}}}`}<span className="req">required</span></span>
+                ) : (
+                  <span key={v.key} className="chip">{`{{${v.key}}}`}<span className="x" onClick={() => remove(v.key)} title="Remove">✕</span></span>
+                )
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 12 }}>
+              <input
+                className="input"
+                placeholder="Add a custom variable, e.g. mentor"
+                value={custom}
+                onChange={(e) => setCustom(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && add()}
+                style={{ flex: 1 }}
+              />
+              <button className="btn btn-sec" onClick={add} disabled={!custom.trim()}>+ Add custom</button>
+            </div>
+          </div>
 
-      <div className="card card-pad stack-16">
-        <span className="label">Variables in this campaign</span>
-        <div className="row wrap" style={{ gap: 8 }}>
-          {vars.map((v) =>
-            v.required ? (
-              <span key={v.key} className="chip chip-req mono">{`{{${v.key}}}`} · required</span>
-            ) : (
-              <span key={v.key} className="chip mono">
-                {`{{${v.key}}}`}
-                <span className="chip-x" onClick={() => remove(v.key)} title="Remove">✕</span>
-              </span>
-            )
-          )}
+          <div className="ctx">
+            <div className="cx soft">
+              <span className="lbl">CSV columns expected</span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {vars.map((v) => (
+                  <div key={v.key} style={{ fontFamily: "var(--mono)", fontSize: 13.5, color: "var(--ink)", background: "#fff", border: "1px solid var(--line-2)", borderRadius: 9, padding: "11px 13px" }}>
+                    {v.key}{v.required && <span style={{ color: "var(--gray-2)", fontWeight: 400 }}> · required</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="cx">
+              <Note kind="info" bare>
+                <b>email</b> is always required and can't be removed. Optional variables that a recipient's row leaves blank fall back to a default or a pipe fallback like <span className="var">{"{{name | there}}"}</span>.
+              </Note>
+            </div>
+          </div>
         </div>
 
-        <div className="row" style={{ gap: 8 }}>
-          <input
-            className="input"
-            placeholder="Add a custom variable, e.g. mentor"
-            value={custom}
-            onChange={(e) => setCustom(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && add()}
-            style={{ maxWidth: 280 }}
-          />
-          <button className="btn btn-ghost" onClick={add} disabled={!custom.trim()}>+ Add custom</button>
-        </div>
-
-        <hr className="divider" />
-        <div className="stack-8">
-          <span className="label">CSV columns expected</span>
-          <code className="mono" style={{ fontSize: 13.5, color: "var(--ink-2)" }}>{expected}</code>
-        </div>
+        <StepFoot backLabel="Home" onBack={() => nav("/")}>
+          <button className="btn btn-ghost" onClick={() => nav("/campaign/upload")}>Skip</button>
+          <button className="btn btn-pri" onClick={() => nav("/campaign/upload")}>Continue to upload</button>
+        </StepFoot>
       </div>
-
-      <ActionBar
-        backLabel="Home"
-        onBack={() => nav("/")}
-        primary={
-          <>
-            <button className="btn-link" onClick={() => nav("/campaign/upload")}>Skip</button>
-            <button className="btn btn-primary" onClick={() => nav("/campaign/upload")}>Continue to upload</button>
-          </>
-        }
-      />
-    </div>
+    </Shell>
   );
 }

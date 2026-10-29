@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import { IconChevronDown } from "./common";
 
 /**
- * A pragmatic contenteditable editor (bold/italic/underline, headings, lists,
- * alignment, link, image, button, logo, variable insert). Produces clean-ish
- * email HTML. Clicking an existing link or button opens an editor to rename it,
- * change its URL, or delete it. No code is ever typed by the user (FR#5).
+ * A pragmatic contenteditable editor (bold/italic/underline, alignment, lists,
+ * link, image, button, logo, variable insert). Produces clean-ish email HTML.
+ * Clicking an existing link/button opens an editor to rename it, change its URL,
+ * or delete it. No code is ever typed by the user (FR#5).
  */
 export function RichTextEditor({
   value,
@@ -100,7 +101,6 @@ export function RichTextEditor({
   };
   const removeAnchor = () => {
     if (!editor) return;
-    // Remove the button's wrapping paragraph too, so no empty centered line is left.
     if (editor.isButton && editor.el.parentElement?.tagName === "P") {
       editor.el.parentElement.remove();
     } else {
@@ -111,48 +111,44 @@ export function RichTextEditor({
   };
 
   return (
-    <div className="card" style={{ overflow: "visible", position: "relative" }}>
-      <div
-        className="row wrap"
-        style={{ gap: 4, padding: "10px 12px", borderBottom: "1px solid var(--hairline)", position: "relative" }}
-      >
-        <ToolBtn label="B" title="Bold" style={{ fontWeight: 800 }} onClick={() => exec("bold")} />
-        <ToolBtn label="I" title="Italic" style={{ fontStyle: "italic" }} onClick={() => exec("italic")} />
-        <ToolBtn label="U" title="Underline" style={{ textDecoration: "underline" }} onClick={() => exec("underline")} />
-        <Sep />
-        <ToolBtn label="H" title="Heading" onClick={() => exec("formatBlock", "<h2>")} />
-        <ToolBtn label="• List" title="Bullet list" onClick={() => exec("insertUnorderedList")} />
-        <ToolBtn label="1. List" title="Numbered list" onClick={() => exec("insertOrderedList")} />
-        <Sep />
-        <ToolBtn title="Align left" onClick={() => exec("justifyLeft")}><AlignIcon dir="left" /></ToolBtn>
-        <ToolBtn title="Align center" onClick={() => exec("justifyCenter")}><AlignIcon dir="center" /></ToolBtn>
-        <ToolBtn title="Align right" onClick={() => exec("justifyRight")}><AlignIcon dir="right" /></ToolBtn>
-        <Sep />
-        <ToolBtn label="🔗 Link" onClick={addLink} />
-        <ToolBtn label="Button" onClick={addButton} />
-        <ToolBtn label="🖼 Image" onClick={addImage} />
-        <ToolBtn label="Logo" onClick={addLogo} />
-        <div className="spacer" />
-        <div style={{ position: "relative" }}>
-          <button className="btn btn-subtle" style={{ padding: "6px 12px", fontSize: 13 }} onClick={() => setShowVars((s) => !s)}>
-            Insert variable ▾
+    <div style={{ position: "relative" }}>
+      <div className="tbar">
+        <Tb title="Bold" onClick={() => exec("bold")}><b style={{ fontWeight: 800 }}>B</b></Tb>
+        <Tb title="Italic" onClick={() => exec("italic")}><b style={{ fontStyle: "italic", fontWeight: 600 }}>I</b></Tb>
+        <Tb title="Underline" onClick={() => exec("underline")}><b style={{ textDecoration: "underline", fontWeight: 600 }}>U</b></Tb>
+        <span className="div" />
+        <Tb title="Align left" onClick={() => exec("justifyLeft")}><AlignIcon dir="left" /></Tb>
+        <Tb title="Align center" onClick={() => exec("justifyCenter")}><AlignIcon dir="center" /></Tb>
+        <Tb title="Align right" onClick={() => exec("justifyRight")}><AlignIcon dir="right" /></Tb>
+        <span className="div" />
+        <Tb title="Bullet list" onClick={() => exec("insertUnorderedList")}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" /></svg>
+        </Tb>
+        <Tb title="Link" onClick={addLink}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" /></svg>
+        </Tb>
+        <Tb title="Image" onClick={addImage}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="9" cy="9" r="2" /><path d="m21 15-5-5L5 21" /></svg>
+        </Tb>
+        <Tb title="Button" onClick={addButton}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="8" width="18" height="8" rx="4" /></svg>
+        </Tb>
+        <Tb title="Logo" onClick={addLogo}>Logo</Tb>
+        <span className="sp" />
+        <div className="dropwell">
+          <button className="tb ins" onClick={() => setShowVars((s) => !s)}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M12 5v14M5 12h14" /></svg>
+            Insert variable
+            <IconChevronDown s={12} />
           </button>
           {showVars && (
-            <div
-              className="card card-pad"
-              style={{ position: "absolute", right: 0, top: 40, zIndex: 20, width: 230, padding: 12 }}
-            >
-              <div className="label" style={{ marginBottom: 8 }}>Mapped variables</div>
-              {variables.length === 0 && <div className="small muted">Map a CSV first.</div>}
-              <div className="stack-8">
-                {variables.map((v) => (
-                  <button key={v} className="btn-link mono" style={{ textAlign: "left", fontSize: 13 }} onClick={() => insertVar(v)}>
-                    {`{{${v}}}`}
-                  </button>
-                ))}
-              </div>
-              <p className="tiny muted" style={{ marginTop: 10 }}>
-                Add a fallback with a pipe: <code>{"{{name | there}}"}</code>
+            <div className="dropmenu" style={{ right: 0, top: 42 }}>
+              {variables.length === 0 && <div style={{ padding: "8px 11px", fontSize: 13, color: "var(--gray-2)" }}>Map a CSV first.</div>}
+              {variables.map((v) => (
+                <button key={v} onClick={() => insertVar(v)}>{`{{${v}}}`}</button>
+              ))}
+              <p style={{ fontSize: 11.5, color: "var(--gray-2)", margin: "8px 11px 2px", lineHeight: 1.5 }}>
+                Fallback with a pipe: <span className="mono">{"{{name | there}}"}</span>
               </p>
             </div>
           )}
@@ -161,41 +157,36 @@ export function RichTextEditor({
 
       <div
         ref={ref}
-        className="rte-body"
+        className="edit"
         contentEditable
         suppressContentEditableWarning
         onInput={emit}
         onClick={onEditorClick}
-        style={{ minHeight: 260, padding: "20px 22px", fontSize: 15, lineHeight: 1.65, outline: "none" }}
       />
 
-      <p className="tiny muted" style={{ padding: "0 22px 14px" }}>
-        Tip: use the align buttons to center a button — don't use spaces, or it shifts in the email. Click any link
-        or button to rename it, change its URL, or delete it.
+      <p style={{ fontSize: 12, color: "var(--gray-2)", margin: "10px 2px 0", lineHeight: 1.5 }}>
+        Use the align buttons to center a button — don't use spaces, or it shifts in the email. Click any link or button to rename it, change its URL, or delete it.
       </p>
 
       {editor && (
         <>
-          <div onClick={() => setEditor(null)} style={{ position: "fixed", inset: 0, zIndex: 40 }} />
-          <div
-            className="card card-pad stack-12"
-            style={{ position: "fixed", top: editor.top, left: editor.left, zIndex: 50, width: 300, padding: 16 }}
-          >
-            <div className="row-between">
-              <span className="label">{editor.isButton ? "Edit button" : "Edit link"}</span>
-              <button className="chip-x" onClick={() => setEditor(null)}>✕</button>
+          <div onClick={() => setEditor(null)} style={{ position: "fixed", inset: 0, zIndex: 110 }} />
+          <div className="popover" style={{ top: editor.top, left: editor.left }}>
+            <div className="rowb" style={{ marginBottom: 12 }}>
+              <span className="lbl" style={{ margin: 0 }}>{editor.isButton ? "Edit button" : "Edit link"}</span>
+              <button className="linkbtn" style={{ color: "var(--gray-2)" }} onClick={() => setEditor(null)}>✕</button>
             </div>
-            <div className="stack-4">
-              <span className="tiny muted">{editor.isButton ? "Button label" : "Link text"}</span>
-              <input className="input" value={editor.text} onChange={(e) => setEditor({ ...editor, text: e.target.value })} />
+            <div style={{ marginBottom: 12 }}>
+              <span style={{ fontSize: 12, color: "var(--gray-2)", display: "block", marginBottom: 5 }}>{editor.isButton ? "Button label" : "Link text"}</span>
+              <input className="input" style={{ height: 42 }} value={editor.text} onChange={(e) => setEditor({ ...editor, text: e.target.value })} />
             </div>
-            <div className="stack-4">
-              <span className="tiny muted">URL</span>
-              <input className="input mono" style={{ fontSize: 12.5 }} value={editor.url} onChange={(e) => setEditor({ ...editor, url: e.target.value })} />
+            <div style={{ marginBottom: 16 }}>
+              <span style={{ fontSize: 12, color: "var(--gray-2)", display: "block", marginBottom: 5 }}>URL</span>
+              <input className="input mono" style={{ height: 42, fontSize: 12.5 }} value={editor.url} onChange={(e) => setEditor({ ...editor, url: e.target.value })} />
             </div>
-            <div className="row-between">
-              <button className="btn btn-danger" onClick={removeAnchor}>Delete</button>
-              <button className="btn btn-primary" onClick={saveAnchor}>Save</button>
+            <div className="rowb">
+              <button className="btn btn-line btn-sm" style={{ color: "var(--red)" }} onClick={removeAnchor}>Delete</button>
+              <button className="btn btn-pri btn-sm" onClick={saveAnchor}>Save</button>
             </div>
           </div>
         </>
@@ -213,35 +204,21 @@ interface AnchorEdit {
   left: number;
 }
 
-function ToolBtn({
-  label, title, onClick, style, children,
-}: { label?: string; title?: string; onClick: () => void; style?: React.CSSProperties; children?: React.ReactNode }) {
+function Tb({ title, onClick, children }: { title: string; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button
-      title={title ?? label}
-      onMouseDown={(e) => e.preventDefault()}
-      onClick={onClick}
-      style={{
-        border: "1px solid transparent", background: "transparent", cursor: "pointer",
-        padding: "6px 9px", borderRadius: 7, fontSize: 13.5, color: "var(--ink-2)",
-        display: "inline-flex", alignItems: "center", gap: 5, ...style,
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.background = "#f4f3f0")}
-      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-    >
-      {children ?? label}
+    <button type="button" className="tb" title={title} onMouseDown={(e) => e.preventDefault()} onClick={onClick}>
+      {children}
     </button>
   );
 }
 
 function AlignIcon({ dir }: { dir: "left" | "center" | "right" }) {
-  // Row widths: full line, then a shorter line whose x-offset shows the alignment.
-  const rows = [14, 8, 14, 8]; // alternating long/short
+  const rows = [14, 8, 14, 8];
   const xFor = (w: number, long: boolean) => {
     if (long) return 1;
     if (dir === "left") return 1;
     if (dir === "right") return 15 - w;
-    return (16 - w) / 2; // center
+    return (16 - w) / 2;
   };
   return (
     <svg width="16" height="14" viewBox="0 0 16 14" aria-hidden>
@@ -252,8 +229,6 @@ function AlignIcon({ dir }: { dir: "left" | "center" | "right" }) {
     </svg>
   );
 }
-
-const Sep = () => <span style={{ width: 1, height: 20, background: "var(--hairline)", margin: "0 4px" }} />;
 
 function escapeAttr(s: string) { return s.replace(/"/g, "&quot;"); }
 function escapeText(s: string) { return s.replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
